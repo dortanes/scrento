@@ -30,8 +30,5 @@ linux:
     - AppImage
     - deb
     - rpm
-  maintainer:
-    name: dortanes
-    email: gh@dortanes.com
     # - freebsd
   
