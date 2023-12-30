@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import './font.scss';
+
+:root, #app, body, html {
+  height: 100vh;
+  width: 100%;
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
+}
