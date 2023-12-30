@@ -25,8 +25,10 @@ function createWindow(args: string[] = []) {
 	mainWindow = new BrowserWindow({
 		icon: join(__dirname, "../../src/assets/icons/icon.png"),
 		title: `${productName} | ${description} - v${version}`,
+		width: 1200,
+		height: 900,
 		minWidth: 1200,
-		minHeight: 600,
+		minHeight: 900,
 		resizable: true,
 		maximizable: true,
 		fullscreen: args.findIndex((arg) => arg.startsWith("--deviceId")) !== -1,
