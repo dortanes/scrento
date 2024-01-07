@@ -21,8 +21,7 @@ mac:
 
 win:
   target: 
-    - nsis
-    - portable
+    - squirrel
   
 linux:
   category: Utility

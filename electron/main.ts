@@ -4,16 +4,6 @@ import {productName, description, version} from "../package.json";
 
 import installExtension, {VUEJS_DEVTOOLS} from "electron-devtools-installer";
 
-/**
- * ** The built directory structure
- * ------------------------------------
- * ├─┬ build/electron
- * │ └── main.js        > Electron-Main
- * │ └── preload.js     > Preload-Scripts
- * ├─┬ build/app
- *   └── index.html     > Electron-Renderer
- */
-
 process.env.BUILD_APP = join(__dirname, "../app");
 process.env.PUBLIC = process.env.VITE_DEV_SERVER_URL
 	? join(__dirname, "../../public")
