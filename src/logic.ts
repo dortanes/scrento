@@ -1,7 +1,8 @@
 import {Ref, ref} from "vue";
 import Diont, {IService} from "diont";
-import * as peerjs from "peerjs";
+import {Room, joinRoom} from "trystero";
 import {ipcRenderer} from "electron";
+import {createFakeStream, patchWrtcParameters} from "./utils";
 
 interface DeviceInfo {
 	id: string;
@@ -14,7 +15,7 @@ class Peer extends EventTarget {
 	private id: string;
 	private targetId?: string;
 	private stream?: MediaStream;
-	private peer: peerjs.Peer;
+	private room: Room;
 
 	constructor(id: string, stream?: MediaStream, targetId?: string) {
 		super();
@@ -22,76 +23,44 @@ class Peer extends EventTarget {
 		this.id = id;
 		this.targetId = targetId;
 		this.stream = stream;
-		this.peer = new peerjs.Peer(id);
+		this.room = joinRoom(
+			{
+				appId: "scrento",
+				rtcConfig: {
+					bundlePolicy: "max-bundle",
+				},
+			},
+			this.targetId ?? this.id
+		);
 	}
 
 	start() {
-		console.log("Starting peer");
+		// On peer join
+		this.room.onPeerJoin((peerId) => {
+			this.dispatchEvent(new CustomEvent("viewerJoin", {detail: peerId}));
 
-		this.peer.on("open", (id) => {
-			console.log("My peer ID is: " + id);
+			// Patch WebRTC parameters
+			const peers = this.room.getPeers();
+			const peer = peers[peerId];
+			patchWrtcParameters(peer as RTCPeerConnection, {});
 
-			if (this.stream) this.listenCall();
-			else this.call();
+			if (this.stream) this.room.addStream(this.stream as MediaStream, peerId);
 		});
 
-		this.peer.on("connection", (conn) => {
-			conn.on("data", (data) => {
-				console.log(data);
-			});
-		});
-	}
-
-	listenCall() {
-		this.peer.on("call", (call) => {
-			call.answer(
-				this.stream as MediaStream,
-				{
-					offerToReceiveVideo: 0,
-					offerToReceiveAudio: 0,
-				} as any
-			);
-			this.dispatchEvent(new CustomEvent("viewer", {detail: call}));
-		});
-	}
-
-	private createFakeStream() {
-		const canvas = document.createElement("canvas");
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return null;
-
-		canvas.width = 64;
-		canvas.height = 64;
-		ctx.fillStyle = "black";
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-		return canvas.captureStream(1);
-	}
-
-	async call() {
-		const conn = this.peer.connect(this.targetId as string);
-
-		conn.on("open", () => {
-			const call = this.peer.call(
-				this.targetId as string,
-				this.createFakeStream() as MediaStream,
-				{
-					offerToReceiveAudio: 0,
-					offerToReceiveVideo: 1,
-				} as any
-			);
-
-			call.on("stream", (stream) => {
-				this.dispatchEvent(new CustomEvent("stream", {detail: stream}));
-			});
+		// On peer leave
+		this.room.onPeerLeave((peerId) => {
+			this.dispatchEvent(new CustomEvent("viewerLeave", {detail: peerId}));
 		});
 
-		// });
+		// On stream received
+		this.room.onPeerStream((stream) => {
+			this.dispatchEvent(new CustomEvent("stream", {detail: stream}));
+		});
 	}
 
 	stop() {
-		this.peer.disconnect();
-		this.peer.destroy();
+		this.room.removeStream(this.stream as MediaStream);
+		this.room.leave();
 	}
 }
 
@@ -181,6 +150,7 @@ class Logic {
 		}
 
 		this.isStreaming.value = !this.isStreaming.value;
+		this.viewersCount.value = 0;
 
 		if (!this.isStreaming.value) {
 			this.source.value?.getTracks().forEach((track) => track.stop());
@@ -194,19 +164,14 @@ class Logic {
 			this.peer = new Peer(this.id.value as string, this.source.value as MediaStream);
 			this.peer.start();
 
-			this.peer.addEventListener("viewer", (event) => {
+			this.peer.addEventListener("viewerJoin", (event) => {
 				this.viewersCount.value++;
-				const call = (event as CustomEvent).detail as peerjs.MediaConnection;
+			});
 
-				call.on("iceStateChanged", (state) => {
-					if (state === "disconnected") {
-						this.viewersCount.value--;
-					}
-				});
+			this.peer.addEventListener("viewerLeave", (event) => {
+				this.viewersCount.value--;
 			});
 		}
-
-		this.viewersCount.value = 0;
 	}
 
 	setSource(source: MediaStream) {
@@ -225,7 +190,7 @@ class Logic {
 	setViewDeviceId(id: string) {
 		this.viewDeviceId.value = id;
 
-		this.peer = new Peer(this.id.value as string, undefined, id);
+		this.peer = new Peer(this.id.value as string, createFakeStream(), id);
 
 		this.peer.addEventListener("stream", (event) => {
 			this.isViewLoading.value = false;
