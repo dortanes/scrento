@@ -10,6 +10,7 @@ interface DeviceInfo {
 }
 
 type AnnounceServiceId = `${string}:${string}:${string}`;
+const isViewerMode = () => !!window.process.argv.find((arg) => arg.startsWith("--deviceId="));
 
 class Peer extends EventTarget {
 	private id: string;
@@ -37,7 +38,7 @@ class Peer extends EventTarget {
 	start() {
 		// On peer join
 		this.room.onPeerJoin((peerId) => {
-			this.dispatchEvent(new CustomEvent("viewerJoin", {detail: peerId}));
+			this.dispatchEvent(new CustomEvent("join", {detail: peerId}));
 
 			// Patch WebRTC parameters
 			const peers = this.room.getPeers();
@@ -49,7 +50,12 @@ class Peer extends EventTarget {
 
 		// On peer leave
 		this.room.onPeerLeave((peerId) => {
-			this.dispatchEvent(new CustomEvent("viewerLeave", {detail: peerId}));
+			if (isViewerMode()) {
+				this.room.leave();
+				window.close();
+			}
+
+			this.dispatchEvent(new CustomEvent("leave", {detail: peerId}));
 		});
 
 		// On stream received
@@ -74,7 +80,7 @@ class Logic {
 	public devices: Ref<DeviceInfo[]> = ref([]);
 
 	public isStreaming: Ref<boolean> = ref(false);
-	public viewersCount: Ref<number> = ref(0);
+	public viewers: Ref<string[]> = ref([]);
 
 	public source: Ref<MediaStream | null> = ref(null);
 	private peer: Peer | null = null;
@@ -138,6 +144,10 @@ class Logic {
 	}
 
 	switchRole() {
+		if (this.role.value === "streamer" && this.isStreaming.value) {
+			this.toggleStream();
+		}
+
 		this.setRole(this.role.value === "streamer" ? "viewer" : "streamer");
 	}
 
@@ -150,7 +160,7 @@ class Logic {
 		}
 
 		this.isStreaming.value = !this.isStreaming.value;
-		this.viewersCount.value = 0;
+		this.viewers.value = [];
 
 		if (!this.isStreaming.value) {
 			this.source.value?.getTracks().forEach((track) => track.stop());
@@ -164,12 +174,15 @@ class Logic {
 			this.peer = new Peer(this.id.value as string, this.source.value as MediaStream);
 			this.peer.start();
 
-			this.peer.addEventListener("viewerJoin", (event) => {
-				this.viewersCount.value++;
+			this.peer.addEventListener("join", (e) => {
+				this.viewers.value.push((e as CustomEvent<string>).detail);
 			});
 
-			this.peer.addEventListener("viewerLeave", (event) => {
-				this.viewersCount.value--;
+			this.peer.addEventListener("leave", (e) => {
+				const index = this.viewers.value.findIndex(
+					(id) => id === (e as CustomEvent<string>).detail
+				);
+				if (index !== -1) this.viewers.value.splice(index, 1);
 			});
 		}
 	}

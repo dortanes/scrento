@@ -79,10 +79,10 @@
 			</div>
 
 			<h4 class="font-bold text-md py-3">Video Inputs</h4>
-			<ul class="menu bg-base-200 w-full rounded-box">
+			<ul class="menu bg-neutral-50 w-full rounded-box">
 				<li
 					v-for="input in videoInputs"
-					:class="input.deviceId === selectSource?.id ? 'bg-neutral-100' : ''"
+					:class="input.deviceId === selectSource?.id ? 'bg-neutral-200' : ''"
 					@click="selectSource = {id: input.deviceId, type: 'videoInput'}"
 				>
 					<a>{{ input.label }}</a>

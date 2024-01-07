@@ -1,8 +1,8 @@
 # @see https://www.electron.build/configuration/configuration
 ---
-appId: br.heliomarpm.elvvqs
-productName: Electron VueVite - Quick Start
-copyright: Copyright © 2023 — ${author}
+appId: com.dortanes.scrento
+productName: Scrento
+copyright: Open Source by ${author}
 artifactName: ${name}_Setup_v${version}_${os}-${arch}.${ext}
 asar: true
 
