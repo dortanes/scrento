@@ -1,7 +1,7 @@
 {
   "name": "scrento",
   "productName": "Scrento",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Share your screen easily with lowest latency and highest bitrate",
   "main": "build/electron/main.js",
   "author": {

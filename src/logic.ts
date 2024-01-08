@@ -18,6 +18,14 @@ class Peer extends EventTarget {
 	private stream?: MediaStream;
 	private room: Room;
 
+	get state() {
+		const peers = this.room.getPeers();
+
+		// get first
+		const peer = Object.values(peers)[0];
+		return peer?.connectionState;
+	}
+
 	constructor(id: string, stream?: MediaStream, targetId?: string) {
 		super();
 
@@ -93,6 +101,10 @@ class Logic {
 		if (!this.role.value) this.setRole(null);
 
 		this.listenEvents();
+	}
+
+	get peerState() {
+		return this.peer?.state;
 	}
 
 	listenEvents() {

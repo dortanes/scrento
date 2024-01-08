@@ -2,6 +2,9 @@
 	import logic from "@/logic";
 	import {onMounted, ref, watch} from "vue";
 
+	let stateCheckout: NodeJS.Timeout | null = null;
+	const stateCheckoutTime = 3 * 1000;
+
 	const player = ref<HTMLVideoElement>();
 
 	onMounted(() => {
@@ -18,11 +21,18 @@
 
 		player.value.srcObject = logic.source.value;
 		player.value.play();
+
+		stateCheckout = setInterval(() => {
+			if (logic.peerState !== "connected") {
+				logic.destroy();
+				window.close();
+			}
+		}, stateCheckoutTime);
 	});
 </script>
 <template>
 	<main class="w-screen h-screen relative bg-black">
-		<video class="w-full h-full" ref="player" autoplay />
+		<video class="w-full h-full cursor-none" ref="player" autoplay />
 
 		<div
 			class="absolute top-0 left-0 w-full h-full flex items-center justify-center"
