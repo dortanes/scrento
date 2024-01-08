@@ -20,8 +20,10 @@ function createWindow(args: string[] = []) {
 		minWidth: 1200,
 		minHeight: 900,
 		resizable: true,
+		autoHideMenuBar: true,
 		maximizable: true,
 		fullscreen: args.findIndex((arg) => arg.startsWith("--deviceId")) !== -1,
+		kiosk: args.findIndex((arg) => arg.startsWith("--deviceId")) !== -1,
 		webPreferences: {
 			// Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
 			// Consider using contextBridge.exposeInMainWorld
@@ -32,6 +34,9 @@ function createWindow(args: string[] = []) {
 			additionalArguments: args,
 		},
 	});
+
+	// Hide the menubar
+	mainWindow.setMenu(null);
 
 	if (process.env.VITE_DEV_SERVER_URL) {
 		mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);

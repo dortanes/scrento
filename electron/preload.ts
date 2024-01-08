@@ -109,14 +109,10 @@ domReady().then(appendLoading);
 let appLoaded = false;
 let timeout = false;
 
-/**
- * Set a timeout for loading the application and
- * call the removeLoading function if the application is already loaded
- */
-setTimeout(() => {
-	timeout = true;
-	appLoaded && removeLoading();
-}, 4999);
+// setTimeout(() => {
+// 	timeout = true;
+// 	appLoaded && removeLoading();
+// }, 4999);
 
 /**
  * Define an event to listen for the "removeLoading" message and
@@ -135,13 +131,4 @@ setTimeout(() => {
  *      .$nextTick(() => postMessage({ payload: 'removeLoading' }, '*') );
  *
  */
-window.onmessage = (event) => {
-	if (event.data.payload === "removeLoading") {
-		appLoaded = true;
-		/**
-		 * execute the removeLoading function if timeout is true
-		 * (that is, if the timeout has already been reached)
-		 */
-		timeout && removeLoading();
-	}
-};
+window.onload = () => removeLoading();

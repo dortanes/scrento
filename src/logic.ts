@@ -134,6 +134,10 @@ class Logic {
 	}
 
 	setId(id: string | null) {
+		if (this.role.value === "streamer" && this.isStreaming.value) {
+			this.toggleStream();
+		}
+
 		this.id.value = id ?? Math.random().toString(36).substr(2, 9);
 		localStorage.setItem("id", this.id.value);
 	}
