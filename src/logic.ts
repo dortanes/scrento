@@ -47,12 +47,6 @@ class Peer extends EventTarget {
 		// On peer join
 		this.room.onPeerJoin((peerId) => {
 			this.dispatchEvent(new CustomEvent("join", {detail: peerId}));
-
-			// Patch WebRTC parameters
-			const peers = this.room.getPeers();
-			const peer = peers[peerId];
-			patchWrtcParameters(peer as RTCPeerConnection, {});
-
 			if (this.stream) this.room.addStream(this.stream as MediaStream, peerId);
 		});
 
@@ -67,7 +61,12 @@ class Peer extends EventTarget {
 		});
 
 		// On stream received
-		this.room.onPeerStream((stream) => {
+		this.room.onPeerStream((stream, peerId) => {
+			// Patch WebRTC parameters
+			const peers = this.room.getPeers();
+			const peer = peers[peerId];
+			patchWrtcParameters(peer as RTCPeerConnection, {});
+
 			this.dispatchEvent(new CustomEvent("stream", {detail: stream}));
 		});
 	}

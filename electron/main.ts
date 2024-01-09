@@ -1,4 +1,4 @@
-import {app, BrowserWindow, shell, desktopCapturer, session, ipcMain} from "electron";
+import {app, BrowserWindow, shell, desktopCapturer, screen, session, ipcMain} from "electron";
 import {join} from "path";
 import {productName, description, version} from "../package.json";
 
@@ -89,8 +89,13 @@ app.whenReady().then(async () => {
 	ipcMain.handle("getScreens", () => {
 		// get desktop capturer windows
 		return desktopCapturer.getSources({types: ["screen"]}).then((sources) => {
-			return sources.map((source) => {
+			return sources.map((source, i) => {
+				const display = screen.getAllDisplays()[i];
+
 				return {
+					width: display.workAreaSize.width,
+					height: display.workAreaSize.height,
+					fps: display.displayFrequency,
 					id: source.id,
 					name: source.name,
 					thumbnail: source.thumbnail.toDataURL(),
@@ -122,7 +127,7 @@ app.whenReady().then(async () => {
 // explicitly with Cmd + Q.
 app.on("window-all-closed", () => {
 	mainWindow = null;
-	if (process.platform !== "darwin") app.quit();
+	app.quit();
 });
 
 // In this file you can include the rest of your app's specific main process

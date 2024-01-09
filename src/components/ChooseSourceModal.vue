@@ -5,10 +5,18 @@
 	import logic from "@/logic";
 
 	const videoInputs = ref<MediaDeviceInfo[]>([]);
-	const screens = ref<{id: string; name: string; thumbnail: string}[]>([]);
+	const screens = ref<
+		{id: string; width: number; height: number; name: string; fps: number; thumbnail: string}[]
+	>([]);
 	const windows = ref<{id: string; name: string; thumbnail: string}[]>([]);
 
-	const selectSource = ref<{id: string; type: string} | null>(null);
+	const selectSource = ref<{
+		id: string;
+		width: number;
+		height: number;
+		fps: number;
+		type: string;
+	} | null>(null);
 
 	onMounted(() => {
 		navigator.mediaDevices.enumerateDevices().then((devices) => {
@@ -30,8 +38,11 @@
 						mandatory: {
 							chromeMediaSource: "desktop",
 							chromeMediaSourceId: selectSource.value.id,
-							minWidth: 1280,
-							minHeight: 720,
+							minWidth: selectSource.value.width ?? 1280,
+							minHeight: selectSource.value.height ?? 720,
+							maxWidth: selectSource.value.width ?? 1280,
+							maxHeight: selectSource.value.height ?? 720,
+							frameRate: selectSource.value.fps ?? 75,
 						},
 					},
 				} as any);
@@ -60,7 +71,7 @@
 					:id="screen.id"
 					:name="screen.name"
 					:thumbnail="screen.thumbnail"
-					@click="selectSource = {id: screen.id, type: 'screen'}"
+					@click="selectSource = {...screen, type: 'screen'}"
 					:active="selectSource?.id === screen.id"
 				/>
 			</div>
@@ -73,7 +84,9 @@
 					:id="window.id"
 					:name="window.name"
 					:thumbnail="window.thumbnail"
-					@click="selectSource = {id: window.id, type: 'window'}"
+					@click="
+						selectSource = {id: window.id, width: 0, height: 0, fps: 75, type: 'window'}
+					"
 					:active="selectSource?.id === window.id"
 				/>
 			</div>
@@ -83,7 +96,15 @@
 				<li
 					v-for="input in videoInputs"
 					:class="input.deviceId === selectSource?.id ? 'bg-neutral-200' : ''"
-					@click="selectSource = {id: input.deviceId, type: 'videoInput'}"
+					@click="
+						selectSource = {
+							id: input.deviceId,
+							width: 0,
+							height: 0,
+							fps: 0,
+							type: 'videoInput',
+						}
+					"
 				>
 					<a>{{ input.label }}</a>
 				</li>

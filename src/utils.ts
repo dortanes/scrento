@@ -9,29 +9,40 @@ export function patchWrtcParameters(
 	peer: RTCPeerConnection,
 	{
 		maxBitrate = 8000000,
-		maxFramerate = 60,
+		maxFramerate = 100,
 		priority = "high" as RTCPriorityType,
 		scaleResolutionDownBy = 1,
 		degradationPreference = "maintain-framerate" as RTCDegradationPreference,
 	}
 ) {
-	peer.onconnectionstatechange = () => {
+	console.info("Patching WebRTC parameters", peer.connectionState);
+
+	const patch = () => {
 		if (peer.connectionState === "connected") {
 			const sender = peer.getSenders().filter((s) => s.track?.kind === "video")[0];
 
-			sender.setParameters({
-				...sender.getParameters(),
-				encodings: [
-					{
-						maxBitrate,
-						maxFramerate,
-						priority,
-						scaleResolutionDownBy,
-					},
-				],
+			if (sender) {
+				sender.setParameters({
+					...sender.getParameters(),
+					encodings: [
+						{
+							maxBitrate,
+							maxFramerate,
+							priority,
+							scaleResolutionDownBy,
+						},
+					],
 
-				degradationPreference,
-			});
+					degradationPreference,
+				});
+			}
 		}
+	};
+
+	patch();
+
+	peer.onconnectionstatechange = () => {
+		console.info("Connection state changd", peer.connectionState);
+		patch();
 	};
 }
